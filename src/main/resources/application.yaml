@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: sentinel-ai
+  datasource:
+    url: jdbc:postgresql://localhost:5432/sentinel_ai
+    username: postgres
+    password: your_password
+
+  jpa:
+    jpa:
+      open-in-view: false
+    hibernate:
+      ddl-auto: validate
+
+    properties:
+      hibernate:
+        format_sql: true
+
+    show-sql: true
+
+  flyway:
+    enabled: true
+
+server:
+  port: 8080
