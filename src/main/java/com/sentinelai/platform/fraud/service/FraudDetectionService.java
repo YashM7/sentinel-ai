@@ -20,16 +20,14 @@ public class FraudDetectionService {
 
     public FraudCheckResponse evaluateTransaction(TransactionEntity transaction) {
 
-        List<String> triggeredRules = new ArrayList<>();
+        List<FraudRuleResult> triggeredRules = new ArrayList<>();
 
         for(FraudRule fraudRule : fraudRules) {
             FraudRuleResult result =
                     fraudRule.evaluate(transaction);
 
             if(result.isFraudulent()) {
-                triggeredRules.add(
-                        fraudRule.getRuleName()
-                );
+                triggeredRules.add(result);
             }
         }
 

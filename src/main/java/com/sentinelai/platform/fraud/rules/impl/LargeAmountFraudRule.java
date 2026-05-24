@@ -23,11 +23,13 @@ public class LargeAmountFraudRule implements FraudRule {
         if(fraudulent) {
             return new FraudRuleResult(
                     true,
+                    getRuleName(),
                     "Transaction amount exceeds fraud threshold"
+
             );
         }
 
-        return new FraudRuleResult(false, "Transaction amount is within safe limits");
+        return new FraudRuleResult(false, getRuleName(), "Transaction amount is within safe limits");
     }
 
     @Override
