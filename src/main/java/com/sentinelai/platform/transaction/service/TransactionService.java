@@ -1,6 +1,7 @@
 package com.sentinelai.platform.transaction.service;
 
 import com.sentinelai.platform.alert.service.FraudAlertService;
+import com.sentinelai.platform.audit.service.AuditService;
 import com.sentinelai.platform.fraud.dto.FraudCheckResponse;
 import com.sentinelai.platform.fraud.service.FraudDetectionService;
 import com.sentinelai.platform.transaction.dto.request.CreateTransactionRequest;
@@ -19,17 +20,20 @@ public class TransactionService {
     private final TransactionMapper transactionMapper;
     private final FraudDetectionService fraudDetectionService;
     private final FraudAlertService fraudAlertService;
+    private final AuditService auditService;
 
     public TransactionService(
             TransactionRepository transactionRepository,
             TransactionMapper transactionMapper,
             FraudDetectionService fraudDetectionService,
-            FraudAlertService fraudAlertService)
+            FraudAlertService fraudAlertService,
+            AuditService auditService)
     {
         this.transactionRepository = transactionRepository;
         this.transactionMapper = transactionMapper;
         this.fraudDetectionService = fraudDetectionService;
         this.fraudAlertService = fraudAlertService;
+        this.auditService = auditService;
     }
 
     @Transactional
@@ -51,9 +55,21 @@ public class TransactionService {
         if(fraudCheckResponse.isFraudulent()) {
             savedEntity.setStatus(TransactionStatus.FLAGGED);
             fraudAlertService.createFraudAlerts(savedEntity, fraudCheckResponse.getTriggeredRules());
+            auditService.auditLog(
+                    "TRANSACTION",
+                    savedEntity.getTransactionId(),
+                    "TRANSACTION_FLAGGED",
+                    "Transaction flagged by fraud engine"
+            );
         }
         else {
             savedEntity.setStatus(TransactionStatus.APPROVED);
+            auditService.auditLog(
+                    "TRANSACTION",
+                    savedEntity.getTransactionId(),
+                    "TRANSACTION_APPROVED",
+                    "Transaction approved successfully"
+            );
         }
 
         TransactionEntity updatedTransaction =
