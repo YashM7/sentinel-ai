@@ -1,5 +1,6 @@
 package com.sentinelai.platform.transaction.service;
 
+import com.sentinelai.platform.alert.service.FraudAlertService;
 import com.sentinelai.platform.fraud.dto.FraudCheckResponse;
 import com.sentinelai.platform.fraud.service.FraudDetectionService;
 import com.sentinelai.platform.transaction.dto.request.CreateTransactionRequest;
@@ -17,15 +18,18 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final TransactionMapper transactionMapper;
     private final FraudDetectionService fraudDetectionService;
+    private final FraudAlertService fraudAlertService;
 
     public TransactionService(
             TransactionRepository transactionRepository,
             TransactionMapper transactionMapper,
-            FraudDetectionService fraudDetectionService)
+            FraudDetectionService fraudDetectionService,
+            FraudAlertService fraudAlertService)
     {
         this.transactionRepository = transactionRepository;
         this.transactionMapper = transactionMapper;
         this.fraudDetectionService = fraudDetectionService;
+        this.fraudAlertService = fraudAlertService;
     }
 
     @Transactional
@@ -46,6 +50,7 @@ public class TransactionService {
 
         if(fraudCheckResponse.isFraudulent()) {
             savedEntity.setStatus(TransactionStatus.FLAGGED);
+            fraudAlertService.createFraudAlerts(savedEntity, fraudCheckResponse.getTriggeredRules());
         }
         else {
             savedEntity.setStatus(TransactionStatus.APPROVED);
