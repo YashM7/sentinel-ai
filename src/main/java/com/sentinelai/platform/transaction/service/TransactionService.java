@@ -10,6 +10,8 @@ import com.sentinelai.platform.transaction.entity.TransactionEntity;
 import com.sentinelai.platform.transaction.entity.TransactionStatus;
 import com.sentinelai.platform.transaction.mapper.TransactionMapper;
 import com.sentinelai.platform.transaction.repository.TransactionRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +23,7 @@ public class TransactionService {
     private final FraudDetectionService fraudDetectionService;
     private final FraudAlertService fraudAlertService;
     private final AuditService auditService;
+    private static final Logger log = LoggerFactory.getLogger(TransactionService.class);
 
     public TransactionService(
             TransactionRepository transactionRepository,
@@ -46,6 +49,11 @@ public class TransactionService {
             );
         }
 
+        log.info(
+                "Processing transaction with transactionId={}",
+                request.getTransactionId()
+        );
+
         TransactionEntity entity = transactionMapper.toEntity(request);
         TransactionEntity savedEntity = transactionRepository.save(entity);
 
@@ -55,6 +63,12 @@ public class TransactionService {
         if(fraudCheckResponse.isFraudulent()) {
             savedEntity.setStatus(TransactionStatus.FLAGGED);
             fraudAlertService.createFraudAlerts(savedEntity, fraudCheckResponse.getTriggeredRules());
+
+            log.warn(
+                    "Transaction flagged for fraud. transactionId={}",
+                    savedEntity.getTransactionId()
+            );
+
             auditService.auditLog(
                     "TRANSACTION",
                     savedEntity.getTransactionId(),
@@ -64,6 +78,12 @@ public class TransactionService {
         }
         else {
             savedEntity.setStatus(TransactionStatus.APPROVED);
+
+            log.info(
+                    "Transaction approved. transactionId={}",
+                    savedEntity.getTransactionId()
+            );
+
             auditService.auditLog(
                     "TRANSACTION",
                     savedEntity.getTransactionId(),
