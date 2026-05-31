@@ -2,8 +2,8 @@ package com.sentinelai.platform.fraud.rules.impl;
 
 import com.sentinelai.platform.fraud.rules.FraudRule;
 import com.sentinelai.platform.fraud.rules.FraudRuleResult;
+import com.sentinelai.platform.fraud.service.VelocityTracker;
 import com.sentinelai.platform.transaction.entity.TransactionEntity;
-import com.sentinelai.platform.transaction.repository.TransactionRepository;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -12,10 +12,10 @@ import java.time.LocalDateTime;
 public class VelocityFraudRule implements FraudRule {
 
     private static final long MAX_TRANSACTIONS_PER_MINUTE = 3;
-    private final TransactionRepository transactionRepository;
+    private final VelocityTracker velocityTracker;
 
-    public VelocityFraudRule(TransactionRepository transactionRepository) {
-        this.transactionRepository = transactionRepository;
+    public VelocityFraudRule(VelocityTracker velocityTracker) {
+        this.velocityTracker = velocityTracker;
     }
 
     @Override
@@ -25,7 +25,7 @@ public class VelocityFraudRule implements FraudRule {
                 LocalDateTime.now().minusMinutes(1);
 
         long recentTransactionCount =
-                transactionRepository.countByUserIdAndCreatedAtAfter(
+                velocityTracker.getTransactionCount(
                         transaction.getUserId(),
                         oneMinuteAgo
                 );
