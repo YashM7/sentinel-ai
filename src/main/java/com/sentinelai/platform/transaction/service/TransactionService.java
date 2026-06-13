@@ -4,6 +4,7 @@ import com.sentinelai.platform.alert.service.FraudAlertService;
 import com.sentinelai.platform.audit.service.AuditService;
 import com.sentinelai.platform.fraud.dto.FraudCheckResponse;
 import com.sentinelai.platform.fraud.service.FraudDetectionService;
+import com.sentinelai.platform.fraudcase.service.FraudCaseService;
 import com.sentinelai.platform.transaction.dto.request.CreateTransactionRequest;
 import com.sentinelai.platform.transaction.dto.response.TransactionResponse;
 import com.sentinelai.platform.transaction.entity.TransactionEntity;
@@ -23,6 +24,7 @@ public class TransactionService {
     private final FraudDetectionService fraudDetectionService;
     private final FraudAlertService fraudAlertService;
     private final AuditService auditService;
+    private final FraudCaseService fraudCaseService;
     private static final Logger log = LoggerFactory.getLogger(TransactionService.class);
 
     public TransactionService(
@@ -30,13 +32,15 @@ public class TransactionService {
             TransactionMapper transactionMapper,
             FraudDetectionService fraudDetectionService,
             FraudAlertService fraudAlertService,
-            AuditService auditService)
+            AuditService auditService,
+            FraudCaseService fraudCaseService)
     {
         this.transactionRepository = transactionRepository;
         this.transactionMapper = transactionMapper;
         this.fraudDetectionService = fraudDetectionService;
         this.fraudAlertService = fraudAlertService;
         this.auditService = auditService;
+        this.fraudCaseService = fraudCaseService;
     }
 
     @Transactional
@@ -68,6 +72,8 @@ public class TransactionService {
                     "Transaction flagged for fraud. transactionId={}",
                     savedEntity.getTransactionId()
             );
+
+            fraudCaseService.createFraudCase(savedEntity);
 
             auditService.auditLog(
                     "TRANSACTION",
