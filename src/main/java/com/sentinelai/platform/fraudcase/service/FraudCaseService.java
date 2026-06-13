@@ -1,5 +1,6 @@
 package com.sentinelai.platform.fraudcase.service;
 
+import com.sentinelai.platform.fraudcase.dto.FraudCaseResponse;
 import com.sentinelai.platform.fraudcase.entity.FraudCaseEntity;
 import com.sentinelai.platform.fraudcase.entity.FraudCaseStatus;
 import com.sentinelai.platform.fraudcase.repository.FraudCaseRepository;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -39,5 +41,23 @@ public class FraudCaseService {
         fraudCase.setTransaction(transaction);
 
         return fraudCaseRepository.save(fraudCase);
+    }
+
+    public List<FraudCaseResponse> getAllCases() {
+        return fraudCaseRepository.findAll()
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    private FraudCaseResponse toResponse(FraudCaseEntity fraudCase) {
+        FraudCaseResponse response = new FraudCaseResponse();
+
+        response.setId(fraudCase.getId());
+        response.setCaseNumber(fraudCase.getCaseNumber());
+        response.setStatus(fraudCase.getStatus());
+        response.setTransactionId(fraudCase.getTransaction().getTransactionId());
+        response.setCreatedAt(fraudCase.getCreatedAt());
+        return response;
     }
 }

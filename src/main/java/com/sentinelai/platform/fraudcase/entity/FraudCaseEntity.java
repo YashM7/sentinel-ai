@@ -29,6 +29,14 @@ public class FraudCaseEntity {
 
     }
 
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     public String getCaseNumber() {
         return caseNumber;
     }
