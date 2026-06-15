@@ -3,6 +3,7 @@ package com.sentinelai.platform.fraudcase.controller;
 import com.sentinelai.platform.fraudcase.dto.FraudCaseResponse;
 import com.sentinelai.platform.fraudcase.service.FraudCaseService;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -21,5 +22,10 @@ public class FraudCaseController {
     @GetMapping
     public List<FraudCaseResponse> getAllCases() {
         return fraudCaseService.getAllCases();
+    }
+
+    @GetMapping("/{caseNumber}")
+    public FraudCaseResponse getCase(@PathVariable String caseNumber) {
+        return fraudCaseService.getCaseByCaseNumber(caseNumber);
     }
 }

@@ -1,5 +1,6 @@
 package com.sentinelai.platform.fraudcase.service;
 
+import com.sentinelai.platform.common.exception.FraudCaseNotFoundException;
 import com.sentinelai.platform.fraudcase.dto.FraudCaseResponse;
 import com.sentinelai.platform.fraudcase.entity.FraudCaseEntity;
 import com.sentinelai.platform.fraudcase.entity.FraudCaseStatus;
@@ -48,6 +49,13 @@ public class FraudCaseService {
                 .stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    public FraudCaseResponse getCaseByCaseNumber(String caseNumber) {
+        return fraudCaseRepository.findByCaseNumber(caseNumber)
+                .map(this::toResponse)
+                .orElseThrow(() ->
+                        new FraudCaseNotFoundException("Fraud case not found: " + caseNumber));
     }
 
     private FraudCaseResponse toResponse(FraudCaseEntity fraudCase) {
