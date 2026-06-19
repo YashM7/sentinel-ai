@@ -1,7 +1,9 @@
 package com.sentinelai.platform.fraudcase.service;
 
 import com.sentinelai.platform.common.exception.FraudCaseNotFoundException;
+import com.sentinelai.platform.common.exception.InvalidFraudCaseStatusTransitionException;
 import com.sentinelai.platform.fraudcase.dto.FraudCaseResponse;
+import com.sentinelai.platform.fraudcase.dto.UpdateFraudCaseStatusRequest;
 import com.sentinelai.platform.fraudcase.entity.FraudCaseEntity;
 import com.sentinelai.platform.fraudcase.entity.FraudCaseStatus;
 import com.sentinelai.platform.fraudcase.repository.FraudCaseRepository;
@@ -56,6 +58,52 @@ public class FraudCaseService {
                 .map(this::toResponse)
                 .orElseThrow(() ->
                         new FraudCaseNotFoundException("Fraud case not found: " + caseNumber));
+    }
+
+    public FraudCaseResponse updateCaseStatus(String caseNumber, FraudCaseStatus newStatus) {
+        FraudCaseEntity fraudCase =
+                fraudCaseRepository.findByCaseNumber(caseNumber)
+                        .orElseThrow(() ->
+                                new FraudCaseNotFoundException("Fraud case not found: " + caseNumber));
+
+        validateStatusTransition(fraudCase.getStatus(), newStatus);
+        fraudCase.setStatus(newStatus);
+        fraudCase.setUpdatedAt(LocalDateTime.now());
+
+        FraudCaseEntity updatedCase =
+                fraudCaseRepository.save(fraudCase);
+
+        return toResponse(updatedCase);
+    }
+
+    private void validateStatusTransition(FraudCaseStatus currentStatus, FraudCaseStatus newStatus) {
+        if (currentStatus == FraudCaseStatus.OPEN
+                && newStatus == FraudCaseStatus.UNDER_REVIEW) {
+            return;
+        }
+
+        if (currentStatus == FraudCaseStatus.UNDER_REVIEW
+                && (newStatus == FraudCaseStatus.CONFIRMED_FRAUD
+                || newStatus == FraudCaseStatus.FALSE_POSITIVE)) {
+            return;
+        }
+
+        if (currentStatus == FraudCaseStatus.CONFIRMED_FRAUD
+                && newStatus == FraudCaseStatus.CLOSED) {
+            return;
+        }
+
+        if (currentStatus == FraudCaseStatus.FALSE_POSITIVE
+                && newStatus == FraudCaseStatus.CLOSED) {
+            return;
+        }
+
+        throw new InvalidFraudCaseStatusTransitionException(
+                "Invalid status transition from "
+                        + currentStatus
+                        + " to "
+                        + newStatus
+        );
     }
 
     private FraudCaseResponse toResponse(FraudCaseEntity fraudCase) {

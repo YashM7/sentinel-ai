@@ -83,4 +83,22 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.NOT_FOUND)
                 .body(errorResponse);
     }
+
+    @ExceptionHandler(InvalidFraudCaseStatusTransitionException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidFraudCaseStatusTransitionException(
+            InvalidFraudCaseStatusTransitionException ex,
+            HttpServletRequest request ) {
+
+        ErrorResponse errorResponse = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.BAD_REQUEST.getReasonPhrase(),
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(errorResponse);
+    }
 }

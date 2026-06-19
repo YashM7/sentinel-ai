@@ -1,11 +1,10 @@
 package com.sentinelai.platform.fraudcase.controller;
 
 import com.sentinelai.platform.fraudcase.dto.FraudCaseResponse;
+import com.sentinelai.platform.fraudcase.dto.UpdateFraudCaseStatusRequest;
 import com.sentinelai.platform.fraudcase.service.FraudCaseService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -27,5 +26,12 @@ public class FraudCaseController {
     @GetMapping("/{caseNumber}")
     public FraudCaseResponse getCase(@PathVariable String caseNumber) {
         return fraudCaseService.getCaseByCaseNumber(caseNumber);
+    }
+
+    @PatchMapping("/{caseNumber}/status")
+    public FraudCaseResponse updateCaseStatus(
+            @PathVariable String caseNumber,
+            @Valid @RequestBody UpdateFraudCaseStatusRequest request) {
+        return fraudCaseService.updateCaseStatus(caseNumber, request.getStatus());
     }
 }
