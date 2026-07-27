@@ -1,61 +1,49 @@
 package com.sentinelai.platform.integration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sentinelai.platform.alert.repository.FraudAlertRepository;
 import com.sentinelai.platform.audit.repository.AuditLogRepository;
 import com.sentinelai.platform.fraudcase.entity.FraudCaseEntity;
 import com.sentinelai.platform.fraudcase.entity.FraudCaseStatus;
 import com.sentinelai.platform.fraudcase.repository.FraudCaseRepository;
+import com.sentinelai.platform.testsupport.BasePostgresTest;
 import com.sentinelai.platform.transaction.dto.request.CreateTransactionRequest;
 import com.sentinelai.platform.transaction.entity.TransactionEntity;
 import com.sentinelai.platform.transaction.entity.TransactionStatus;
 import com.sentinelai.platform.transaction.repository.TransactionRepository;
+import com.sentinelai.platform.transaction.service.TransactionService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestConstructor;
-import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.hamcrest.Matchers.containsString;
-
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
-@AutoConfigureMockMvc
-@ActiveProfiles("test-h2")
+@ActiveProfiles("test")
 @Transactional
 @TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
-public class TransactionControllerH2IntegrationTest {
+public class TransactionServiceIntegrationTest extends BasePostgresTest {
 
-    private final MockMvc mockMvc;
-    private final ObjectMapper objectMapper;
-
+    private final TransactionService transactionService;
     private final TransactionRepository transactionRepository;
     private final FraudAlertRepository fraudAlertRepository;
     private final AuditLogRepository auditLogRepository;
     private final FraudCaseRepository fraudCaseRepository;
 
-
-    public TransactionControllerH2IntegrationTest(
-            MockMvc mockMvc,
-            ObjectMapper objectMapper,
+    public TransactionServiceIntegrationTest(
+            TransactionService transactionService,
             TransactionRepository transactionRepository,
             FraudAlertRepository fraudAlertRepository,
             AuditLogRepository auditLogRepository,
             FraudCaseRepository fraudCaseRepository)
     {
-        this.mockMvc = mockMvc;
-        this.objectMapper = objectMapper;
+        this.transactionService = transactionService;
         this.transactionRepository = transactionRepository;
         this.fraudAlertRepository = fraudAlertRepository;
         this.auditLogRepository = auditLogRepository;
@@ -64,24 +52,17 @@ public class TransactionControllerH2IntegrationTest {
 
     @Test
     @DisplayName("Should create fraud artifacts when transaction triggers fraud rule")
-    void createFraudArtifactsWhenTransactionTriggersFraudRule() throws Exception {
+    void createFraudArtifactsWhenTransactionTriggersFraudRule() {
 
         CreateTransactionRequest request = new CreateTransactionRequest();
         request.setTransactionId("TXN-1001");
         request.setUserId(1L);
         request.setMerchantId(100L);
-        request.setAmount(new BigDecimal("15000.76"));
+        request.setAmount(new BigDecimal("15000"));
         request.setCurrency("USD");
         request.setTransactionTimestamp(LocalDateTime.now());
 
-        mockMvc.perform(
-                post("/api/v1/transactions")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request))
-                )
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.transactionId").value("TXN-1001"))
-                .andExpect(jsonPath("$.status").value(TransactionStatus.FLAGGED.name()));
+        transactionService.createTransaction(request);
 
         assertThat(transactionRepository.existsByTransactionId("TXN-1001"))
                 .isTrue();
@@ -108,29 +89,21 @@ public class TransactionControllerH2IntegrationTest {
 
         assertThat(auditLogRepository.count())
                 .isEqualTo(1);
-
     }
 
     @Test
-    @DisplayName("Should approve transaction without creating fraud artifacts")
-    void approveTransactionWithoutCreatingFraudArtifacts() throws Exception {
+    @DisplayName("Should approve transaction without creating fraud artifacts when transaction passes fraud rules")
+    void approveTransactionWithoutCreatingFraudArtifacts() {
 
         CreateTransactionRequest request = new CreateTransactionRequest();
         request.setTransactionId("TXN-1002");
         request.setUserId(1L);
         request.setMerchantId(100L);
-        request.setAmount(new BigDecimal("150.76"));
+        request.setAmount(new BigDecimal("150"));
         request.setCurrency("USD");
         request.setTransactionTimestamp(LocalDateTime.now());
 
-        mockMvc.perform(
-                post("/api/v1/transactions")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request))
-        )
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.transactionId").value("TXN-1002"))
-                .andExpect(jsonPath("$.status").value(TransactionStatus.APPROVED.name()));
+        transactionService.createTransaction(request);
 
         assertThat(transactionRepository.existsByTransactionId("TXN-1002"))
                 .isTrue();
@@ -153,33 +126,40 @@ public class TransactionControllerH2IntegrationTest {
 
     @Test
     @DisplayName("Should reject duplicate transaction without creating additional artifacts")
-    void rejectDuplicateTransactionWithoutCreatingAdditionalArtifacts() throws Exception {
+    void rejectDuplicateTransactionWithoutCreatingAdditionalArtifacts() {
 
         CreateTransactionRequest request = new CreateTransactionRequest();
         request.setTransactionId("TXN-1003");
         request.setUserId(1L);
         request.setMerchantId(100L);
-        request.setAmount(new BigDecimal("150.00"));
+        request.setAmount(new BigDecimal("150"));
         request.setCurrency("USD");
         request.setTransactionTimestamp(LocalDateTime.now());
 
-        mockMvc.perform(
-                post("/api/v1/transactions")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request))
-                )
-                .andExpect(status().isCreated());
+        transactionService.createTransaction(request);
 
-        mockMvc.perform(
-                post("/api/v1/transactions")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request))
-        )
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").value("Bad Request"))
-                .andExpect(jsonPath("$.message").value(containsString("TXN-1003")))
-                .andExpect(jsonPath("$.path").value("/api/v1/transactions"));
+        assertThat(transactionRepository.existsByTransactionId("TXN-1003"))
+                .isTrue();
+
+        TransactionEntity transaction =
+                transactionRepository.findByTransactionId("TXN-1003").orElseThrow();
+
+        assertThat(transaction.getStatus())
+                .isEqualTo(TransactionStatus.APPROVED);
+
+        assertThat(fraudAlertRepository.count())
+                .isZero();
+
+        assertThat(fraudCaseRepository.count())
+                .isZero();
+
+        assertThat(auditLogRepository.count())
+                .isEqualTo(1);
+
+        assertThatThrownBy(() ->
+                transactionService.createTransaction(request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("TXN-1003");
 
         assertThat(transactionRepository.count())
                 .isEqualTo(1);
@@ -192,41 +172,5 @@ public class TransactionControllerH2IntegrationTest {
 
         assertThat(auditLogRepository.count())
                 .isEqualTo(1);
-    }
-
-    @Test
-    @DisplayName("Should return bad request when transaction request is invalid")
-    void returnBadRequestWhenTransactionRequestIsInvalid() throws Exception {
-
-        CreateTransactionRequest request = new CreateTransactionRequest();
-        request.setTransactionId("");
-        request.setUserId(1L);
-        request.setMerchantId(100L);
-        request.setAmount(new BigDecimal("150.00"));
-        request.setCurrency("USD");
-        request.setTransactionTimestamp(LocalDateTime.now());
-
-        mockMvc.perform(
-                post("/api/v1/transactions")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request))
-                )
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").value("Bad Request"))
-                .andExpect(jsonPath("$.message").value(containsString("transactionId is required")))
-                .andExpect(jsonPath("$.path").value("/api/v1/transactions"));
-
-        assertThat(transactionRepository.count())
-                .isZero();
-
-        assertThat(fraudAlertRepository.count())
-                .isZero();
-
-        assertThat(fraudCaseRepository.count())
-                .isZero();
-
-        assertThat(auditLogRepository.count())
-                .isZero();
     }
 }

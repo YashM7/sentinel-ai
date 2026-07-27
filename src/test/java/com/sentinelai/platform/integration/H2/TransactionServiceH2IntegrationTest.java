@@ -1,4 +1,4 @@
-package com.sentinelai.platform.integration;
+package com.sentinelai.platform.integration.H2;
 
 import com.sentinelai.platform.alert.repository.FraudAlertRepository;
 import com.sentinelai.platform.audit.repository.AuditLogRepository;
