@@ -24,10 +24,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
-@ActiveProfiles("test")
+@ActiveProfiles("test-h2")
 @Transactional
 @TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
-public class TransactionServiceIntegrationTest {
+public class TransactionServiceH2IntegrationTest {
 
     private final TransactionService transactionService;
     private final TransactionRepository transactionRepository;
@@ -35,7 +35,7 @@ public class TransactionServiceIntegrationTest {
     private final AuditLogRepository auditLogRepository;
     private final FraudCaseRepository fraudCaseRepository;
 
-    public TransactionServiceIntegrationTest(
+    public TransactionServiceH2IntegrationTest(
             TransactionService transactionService,
             TransactionRepository transactionRepository,
             FraudAlertRepository fraudAlertRepository,

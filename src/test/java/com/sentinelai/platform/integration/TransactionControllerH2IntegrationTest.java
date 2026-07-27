@@ -32,10 +32,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@ActiveProfiles("test")
+@ActiveProfiles("test-h2")
 @Transactional
 @TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
-public class TransactionControllerIntegrationTest {
+public class TransactionControllerH2IntegrationTest {
 
     private final MockMvc mockMvc;
     private final ObjectMapper objectMapper;
@@ -46,7 +46,7 @@ public class TransactionControllerIntegrationTest {
     private final FraudCaseRepository fraudCaseRepository;
 
 
-    public TransactionControllerIntegrationTest(
+    public TransactionControllerH2IntegrationTest(
             MockMvc mockMvc,
             ObjectMapper objectMapper,
             TransactionRepository transactionRepository,
