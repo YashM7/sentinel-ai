@@ -6,6 +6,7 @@ import com.sentinelai.platform.fraud.dto.FraudCheckResponse;
 import com.sentinelai.platform.fraud.rules.FraudRuleResult;
 import com.sentinelai.platform.fraud.service.FraudDetectionService;
 import com.sentinelai.platform.fraudcase.service.FraudCaseService;
+import com.sentinelai.platform.observability.api.TransactionMetricsRecorder;
 import com.sentinelai.platform.transaction.dto.request.CreateTransactionRequest;
 import com.sentinelai.platform.transaction.dto.response.TransactionResponse;
 import com.sentinelai.platform.transaction.entity.TransactionEntity;
@@ -46,6 +47,9 @@ public class TransactionServiceTest {
     @Mock
     private FraudCaseService fraudCaseService;
 
+    @Mock
+    private TransactionMetricsRecorder transactionMetricsRecorder;
+
     private TransactionService transactionService;
 
     @BeforeEach
@@ -56,7 +60,8 @@ public class TransactionServiceTest {
                 fraudDetectionService,
                 fraudAlertService,
                 auditService,
-                fraudCaseService
+                fraudCaseService,
+                transactionMetricsRecorder
         );
     }
 
@@ -100,6 +105,8 @@ public class TransactionServiceTest {
 
         verify(auditService, never())
                 .auditLog(anyString(),anyString(), anyString(), anyString());
+
+        verifyNoInteractions(transactionMetricsRecorder);
     }
 
     @Test
@@ -160,6 +167,10 @@ public class TransactionServiceTest {
                 "TRANSACTION_APPROVED",
                 "Transaction approved successfully"
         );
+
+        verify(transactionMetricsRecorder, times(1)).recordTransactionProcessed();
+
+        verify(transactionMetricsRecorder, times(1)).recordTransactionApproved();
 
         verify(transactionMapper).toResponse(any(TransactionEntity.class));
 
@@ -228,6 +239,10 @@ public class TransactionServiceTest {
                 "TRANSACTION_FLAGGED",
                 "Transaction flagged by fraud engine"
         );
+
+        verify(transactionMetricsRecorder, times(1)).recordTransactionProcessed();
+
+        verify(transactionMetricsRecorder, times(1)).recordTransactionFlagged();
 
         verify(transactionMapper).toResponse(any(TransactionEntity.class));
 

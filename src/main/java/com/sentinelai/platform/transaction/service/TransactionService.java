@@ -5,6 +5,7 @@ import com.sentinelai.platform.audit.service.AuditService;
 import com.sentinelai.platform.fraud.dto.FraudCheckResponse;
 import com.sentinelai.platform.fraud.service.FraudDetectionService;
 import com.sentinelai.platform.fraudcase.service.FraudCaseService;
+import com.sentinelai.platform.observability.api.TransactionMetricsRecorder;
 import com.sentinelai.platform.transaction.dto.request.CreateTransactionRequest;
 import com.sentinelai.platform.transaction.dto.response.TransactionResponse;
 import com.sentinelai.platform.transaction.entity.TransactionEntity;
@@ -25,6 +26,7 @@ public class TransactionService {
     private final FraudAlertService fraudAlertService;
     private final AuditService auditService;
     private final FraudCaseService fraudCaseService;
+    private final TransactionMetricsRecorder transactionMetricsRecorder;
     private static final Logger log = LoggerFactory.getLogger(TransactionService.class);
 
     public TransactionService(
@@ -33,7 +35,8 @@ public class TransactionService {
             FraudDetectionService fraudDetectionService,
             FraudAlertService fraudAlertService,
             AuditService auditService,
-            FraudCaseService fraudCaseService)
+            FraudCaseService fraudCaseService,
+            TransactionMetricsRecorder transactionMetricsRecorder)
     {
         this.transactionRepository = transactionRepository;
         this.transactionMapper = transactionMapper;
@@ -41,6 +44,7 @@ public class TransactionService {
         this.fraudAlertService = fraudAlertService;
         this.auditService = auditService;
         this.fraudCaseService = fraudCaseService;
+        this.transactionMetricsRecorder = transactionMetricsRecorder;
     }
 
     @Transactional
@@ -60,6 +64,8 @@ public class TransactionService {
 
         TransactionEntity entity = transactionMapper.toEntity(request);
         TransactionEntity savedEntity = transactionRepository.save(entity);
+
+        transactionMetricsRecorder.recordTransactionProcessed();
 
         FraudCheckResponse fraudCheckResponse =
                 fraudDetectionService.evaluateTransaction(savedEntity);
@@ -100,6 +106,12 @@ public class TransactionService {
 
         TransactionEntity updatedTransaction =
                 transactionRepository.save(savedEntity);
+
+        if(updatedTransaction.getStatus() == TransactionStatus.APPROVED) {
+            transactionMetricsRecorder.recordTransactionApproved();
+        } else if (updatedTransaction.getStatus() == TransactionStatus.FLAGGED) {
+            transactionMetricsRecorder.recordTransactionFlagged();
+        }
 
         return transactionMapper.toResponse(updatedTransaction);
     }
