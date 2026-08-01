@@ -7,6 +7,7 @@ import com.sentinelai.platform.fraudcase.dto.UpdateFraudCaseStatusRequest;
 import com.sentinelai.platform.fraudcase.entity.FraudCaseEntity;
 import com.sentinelai.platform.fraudcase.entity.FraudCaseStatus;
 import com.sentinelai.platform.fraudcase.repository.FraudCaseRepository;
+import com.sentinelai.platform.observability.api.FraudMetricsRecorder;
 import com.sentinelai.platform.transaction.entity.TransactionEntity;
 import org.springframework.stereotype.Service;
 
@@ -19,9 +20,14 @@ import java.util.UUID;
 public class FraudCaseService {
 
     private final FraudCaseRepository fraudCaseRepository;
+    private final FraudMetricsRecorder fraudMetricsRecorder;
 
-    public FraudCaseService(FraudCaseRepository fraudCaseRepository) {
+    public FraudCaseService(
+            FraudCaseRepository fraudCaseRepository,
+            FraudMetricsRecorder fraudMetricsRecorder)
+    {
         this.fraudCaseRepository = fraudCaseRepository;
+        this.fraudMetricsRecorder = fraudMetricsRecorder;
     }
 
     public FraudCaseEntity createFraudCase(TransactionEntity transaction) {
@@ -43,7 +49,9 @@ public class FraudCaseService {
         fraudCase.setUpdatedAt(now);
         fraudCase.setTransaction(transaction);
 
-        return fraudCaseRepository.save(fraudCase);
+        FraudCaseEntity savedCase = fraudCaseRepository.save(fraudCase);
+        fraudMetricsRecorder.recordFraudCaseCreated();
+        return savedCase;
     }
 
     public List<FraudCaseResponse> getAllCases() {

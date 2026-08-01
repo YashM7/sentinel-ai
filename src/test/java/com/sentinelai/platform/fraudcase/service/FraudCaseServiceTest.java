@@ -6,6 +6,7 @@ import com.sentinelai.platform.fraudcase.dto.FraudCaseResponse;
 import com.sentinelai.platform.fraudcase.entity.FraudCaseEntity;
 import com.sentinelai.platform.fraudcase.entity.FraudCaseStatus;
 import com.sentinelai.platform.fraudcase.repository.FraudCaseRepository;
+import com.sentinelai.platform.observability.api.FraudMetricsRecorder;
 import com.sentinelai.platform.transaction.entity.TransactionEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -28,11 +29,14 @@ public class FraudCaseServiceTest {
     @Mock
     private FraudCaseRepository fraudCaseRepository;
 
+    @Mock
+    private FraudMetricsRecorder fraudMetricsRecorder;
+
     private FraudCaseService fraudCaseService;
 
     @BeforeEach
     void setup() {
-        fraudCaseService = new FraudCaseService(fraudCaseRepository);
+        fraudCaseService = new FraudCaseService(fraudCaseRepository, fraudMetricsRecorder);
     }
 
     @Test
@@ -53,6 +57,8 @@ public class FraudCaseServiceTest {
                 fraudCaseService.createFraudCase(transaction);
 
         Mockito.verify(fraudCaseRepository).save(captor.capture());
+
+        Mockito.verify(fraudMetricsRecorder).recordFraudCaseCreated();
 
         FraudCaseEntity savedFraudCase = captor.getValue();
 
@@ -109,6 +115,8 @@ public class FraudCaseServiceTest {
                 fraudCaseRepository,
                 Mockito.times(1)
         ).save(Mockito.any(FraudCaseEntity.class));
+
+        Mockito.verifyNoInteractions(fraudMetricsRecorder);
     }
 
     @Test

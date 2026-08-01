@@ -3,6 +3,7 @@ package com.sentinelai.platform.alert.service;
 import com.sentinelai.platform.alert.entity.FraudAlertEntity;
 import com.sentinelai.platform.alert.repository.FraudAlertRepository;
 import com.sentinelai.platform.fraud.rules.FraudRuleResult;
+import com.sentinelai.platform.observability.api.FraudMetricsRecorder;
 import com.sentinelai.platform.transaction.entity.TransactionEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -23,11 +24,14 @@ public class FraudAlertServiceTest {
     @Mock
     private FraudAlertRepository fraudAlertRepository;
 
+    @Mock
+    private FraudMetricsRecorder fraudMetricsRecorder;
+
     private FraudAlertService fraudAlertService;
 
     @BeforeEach
     void setup() {
-        fraudAlertService = new FraudAlertService(fraudAlertRepository);
+        fraudAlertService = new FraudAlertService(fraudAlertRepository, fraudMetricsRecorder);
     }
 
     @Test
@@ -60,6 +64,8 @@ public class FraudAlertServiceTest {
 
         Mockito.verify(fraudAlertRepository, Mockito.times(2))
                 .save(captor.capture());
+
+        Mockito.verify(fraudMetricsRecorder, Mockito.times(2)).recordFraudAlertCreated();
 
         List<FraudAlertEntity> savedAlerts = captor.getAllValues();
         FraudAlertEntity firstAlert = savedAlerts.get(0);

@@ -3,6 +3,7 @@ package com.sentinelai.platform.alert.service;
 import com.sentinelai.platform.alert.entity.FraudAlertEntity;
 import com.sentinelai.platform.alert.repository.FraudAlertRepository;
 import com.sentinelai.platform.fraud.rules.FraudRuleResult;
+import com.sentinelai.platform.observability.api.FraudMetricsRecorder;
 import com.sentinelai.platform.transaction.entity.TransactionEntity;
 import org.springframework.stereotype.Service;
 
@@ -13,9 +14,11 @@ import java.util.List;
 public class FraudAlertService {
 
     private final FraudAlertRepository fraudAlertRepository;
+    private final FraudMetricsRecorder fraudMetricsRecorder;
 
-    public FraudAlertService(FraudAlertRepository fraudAlertRepository) {
+    public FraudAlertService(FraudAlertRepository fraudAlertRepository, FraudMetricsRecorder fraudMetricsRecorder) {
         this.fraudAlertRepository = fraudAlertRepository;
+        this.fraudMetricsRecorder = fraudMetricsRecorder;
     }
 
     public void createFraudAlerts (
@@ -33,6 +36,7 @@ public class FraudAlertService {
             fraudAlert.setCreatedAt(LocalDateTime.now());
 
             fraudAlertRepository.save(fraudAlert);
+            fraudMetricsRecorder.recordFraudAlertCreated();
         }
 
     }

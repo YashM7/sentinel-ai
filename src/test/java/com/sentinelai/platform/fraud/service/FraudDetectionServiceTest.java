@@ -3,6 +3,7 @@ package com.sentinelai.platform.fraud.service;
 import com.sentinelai.platform.fraud.dto.FraudCheckResponse;
 import com.sentinelai.platform.fraud.rules.FraudRule;
 import com.sentinelai.platform.fraud.rules.FraudRuleResult;
+import com.sentinelai.platform.observability.api.FraudMetricsRecorder;
 import com.sentinelai.platform.transaction.entity.TransactionEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -25,11 +26,14 @@ public class FraudDetectionServiceTest {
     @Mock
     private FraudRule rule2;
 
+    @Mock
+    private FraudMetricsRecorder fraudMetricsRecorder;
+
     private FraudDetectionService fraudDetectionService;
 
     @BeforeEach
     void setup() {
-        fraudDetectionService = new FraudDetectionService(List.of(rule1, rule2));
+        fraudDetectionService = new FraudDetectionService(List.of(rule1, rule2), fraudMetricsRecorder);
     }
 
     @Test
@@ -77,6 +81,7 @@ public class FraudDetectionServiceTest {
 
         Mockito.verify(rule1).evaluate(transaction);
         Mockito.verify(rule2).evaluate(transaction);
+        Mockito.verify(fraudMetricsRecorder, Mockito.times(1)).recordRuleTriggered("LargeAmountFraudRule");
 
     }
 
@@ -125,6 +130,8 @@ public class FraudDetectionServiceTest {
 
         Mockito.verify(rule1).evaluate(transaction);
         Mockito.verify(rule2).evaluate(transaction);
+        Mockito.verify(fraudMetricsRecorder, Mockito.times(1)).recordRuleTriggered("LargeAmountFraudRule");
+        Mockito.verify(fraudMetricsRecorder, Mockito.times(1)).recordRuleTriggered("VelocityFraudRule");
 
     }
 
@@ -165,5 +172,6 @@ public class FraudDetectionServiceTest {
 
         Mockito.verify(rule1).evaluate(transaction);
         Mockito.verify(rule2).evaluate(transaction);
+        Mockito.verifyNoInteractions(fraudMetricsRecorder);
     }
 }
