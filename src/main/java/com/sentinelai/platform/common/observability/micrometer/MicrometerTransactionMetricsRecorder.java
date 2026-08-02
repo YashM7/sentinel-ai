@@ -1,6 +1,6 @@
-package com.sentinelai.platform.observability.micrometer;
+package com.sentinelai.platform.common.observability.micrometer;
 
-import com.sentinelai.platform.observability.api.TransactionMetricsRecorder;
+import com.sentinelai.platform.common.observability.api.TransactionMetricsRecorder;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;

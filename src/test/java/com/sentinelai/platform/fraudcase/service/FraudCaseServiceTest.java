@@ -6,7 +6,7 @@ import com.sentinelai.platform.fraudcase.dto.FraudCaseResponse;
 import com.sentinelai.platform.fraudcase.entity.FraudCaseEntity;
 import com.sentinelai.platform.fraudcase.entity.FraudCaseStatus;
 import com.sentinelai.platform.fraudcase.repository.FraudCaseRepository;
-import com.sentinelai.platform.observability.api.FraudMetricsRecorder;
+import com.sentinelai.platform.common.observability.api.FraudMetricsRecorder;
 import com.sentinelai.platform.transaction.entity.TransactionEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

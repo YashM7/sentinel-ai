@@ -1,4 +1,4 @@
-package com.sentinelai.platform.observability.api;
+package com.sentinelai.platform.common.observability.api;
 
 import java.time.Duration;
 

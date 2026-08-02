@@ -5,7 +5,7 @@ import com.sentinelai.platform.audit.service.AuditService;
 import com.sentinelai.platform.fraud.dto.FraudCheckResponse;
 import com.sentinelai.platform.fraud.service.FraudDetectionService;
 import com.sentinelai.platform.fraudcase.service.FraudCaseService;
-import com.sentinelai.platform.observability.api.TransactionMetricsRecorder;
+import com.sentinelai.platform.common.observability.api.TransactionMetricsRecorder;
 import com.sentinelai.platform.transaction.dto.request.CreateTransactionRequest;
 import com.sentinelai.platform.transaction.dto.response.TransactionResponse;
 import com.sentinelai.platform.transaction.entity.TransactionEntity;

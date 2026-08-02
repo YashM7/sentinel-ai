@@ -3,7 +3,7 @@ package com.sentinelai.platform.fraud.service;
 import com.sentinelai.platform.fraud.dto.FraudCheckResponse;
 import com.sentinelai.platform.fraud.rules.FraudRule;
 import com.sentinelai.platform.fraud.rules.FraudRuleResult;
-import com.sentinelai.platform.observability.api.FraudMetricsRecorder;
+import com.sentinelai.platform.common.observability.api.FraudMetricsRecorder;
 import com.sentinelai.platform.transaction.entity.TransactionEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
