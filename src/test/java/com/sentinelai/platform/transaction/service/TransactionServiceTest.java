@@ -22,6 +22,7 @@ import org.mockito.Mockito;
 import static org.mockito.Mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Duration;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -106,7 +107,8 @@ public class TransactionServiceTest {
         verify(auditService, never())
                 .auditLog(anyString(),anyString(), anyString(), anyString());
 
-        verifyNoInteractions(transactionMetricsRecorder);
+        verify(transactionMetricsRecorder, times(1))
+                .recordTransactionProcessingTime(any(Duration.class));
     }
 
     @Test
@@ -171,6 +173,9 @@ public class TransactionServiceTest {
         verify(transactionMetricsRecorder, times(1)).recordTransactionProcessed();
 
         verify(transactionMetricsRecorder, times(1)).recordTransactionApproved();
+
+        verify(transactionMetricsRecorder, times(1))
+                .recordTransactionProcessingTime(any(Duration.class));
 
         verify(transactionMapper).toResponse(any(TransactionEntity.class));
 
@@ -244,6 +249,9 @@ public class TransactionServiceTest {
 
         verify(transactionMetricsRecorder, times(1)).recordTransactionFlagged();
 
+        verify(transactionMetricsRecorder, times(1))
+                .recordTransactionProcessingTime(any(Duration.class));
+
         verify(transactionMapper).toResponse(any(TransactionEntity.class));
 
         verifyNoMoreInteractions(
@@ -252,7 +260,8 @@ public class TransactionServiceTest {
                 fraudDetectionService,
                 fraudAlertService,
                 fraudCaseService,
-                auditService
+                auditService,
+                transactionMetricsRecorder
         );
     }
 }

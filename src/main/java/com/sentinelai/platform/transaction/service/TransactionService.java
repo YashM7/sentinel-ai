@@ -17,6 +17,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+import java.time.Instant;
+
 @Service
 public class TransactionService {
 
@@ -50,69 +53,78 @@ public class TransactionService {
     @Transactional
     public TransactionResponse createTransaction(CreateTransactionRequest request) {
 
-        if(transactionRepository.existsByTransactionId(request.getTransactionId())) {
-            throw new IllegalArgumentException(
-                    "Transaction already exists with transactionId: " +
-                            request.getTransactionId()
-            );
-        }
+        Instant start = Instant.now();
 
-        log.info(
-                "Processing transaction with transactionId={}",
-                request.getTransactionId()
-        );
+        try {
 
-        TransactionEntity entity = transactionMapper.toEntity(request);
-        TransactionEntity savedEntity = transactionRepository.save(entity);
-
-        transactionMetricsRecorder.recordTransactionProcessed();
-
-        FraudCheckResponse fraudCheckResponse =
-                fraudDetectionService.evaluateTransaction(savedEntity);
-
-        if(fraudCheckResponse.isFraudulent()) {
-            savedEntity.setStatus(TransactionStatus.FLAGGED);
-            fraudAlertService.createFraudAlerts(savedEntity, fraudCheckResponse.getTriggeredRules());
-
-            log.warn(
-                    "Transaction flagged for fraud. transactionId={}",
-                    savedEntity.getTransactionId()
-            );
-
-            fraudCaseService.createFraudCase(savedEntity);
-
-            auditService.auditLog(
-                    "TRANSACTION",
-                    savedEntity.getTransactionId(),
-                    "TRANSACTION_FLAGGED",
-                    "Transaction flagged by fraud engine"
-            );
-        }
-        else {
-            savedEntity.setStatus(TransactionStatus.APPROVED);
+            if(transactionRepository.existsByTransactionId(request.getTransactionId())) {
+                throw new IllegalArgumentException(
+                        "Transaction already exists with transactionId: " +
+                                request.getTransactionId()
+                );
+            }
 
             log.info(
-                    "Transaction approved. transactionId={}",
-                    savedEntity.getTransactionId()
+                    "Processing transaction with transactionId={}",
+                    request.getTransactionId()
             );
 
-            auditService.auditLog(
-                    "TRANSACTION",
-                    savedEntity.getTransactionId(),
-                    "TRANSACTION_APPROVED",
-                    "Transaction approved successfully"
-            );
+            TransactionEntity entity = transactionMapper.toEntity(request);
+            TransactionEntity savedEntity = transactionRepository.save(entity);
+
+            transactionMetricsRecorder.recordTransactionProcessed();
+
+            FraudCheckResponse fraudCheckResponse =
+                    fraudDetectionService.evaluateTransaction(savedEntity);
+
+            if(fraudCheckResponse.isFraudulent()) {
+                savedEntity.setStatus(TransactionStatus.FLAGGED);
+                fraudAlertService.createFraudAlerts(savedEntity, fraudCheckResponse.getTriggeredRules());
+
+                log.warn(
+                        "Transaction flagged for fraud. transactionId={}",
+                        savedEntity.getTransactionId()
+                );
+
+                fraudCaseService.createFraudCase(savedEntity);
+
+                auditService.auditLog(
+                        "TRANSACTION",
+                        savedEntity.getTransactionId(),
+                        "TRANSACTION_FLAGGED",
+                        "Transaction flagged by fraud engine"
+                );
+            }
+            else {
+                savedEntity.setStatus(TransactionStatus.APPROVED);
+
+                log.info(
+                        "Transaction approved. transactionId={}",
+                        savedEntity.getTransactionId()
+                );
+
+                auditService.auditLog(
+                        "TRANSACTION",
+                        savedEntity.getTransactionId(),
+                        "TRANSACTION_APPROVED",
+                        "Transaction approved successfully"
+                );
+            }
+
+            TransactionEntity updatedTransaction =
+                    transactionRepository.save(savedEntity);
+
+            if(updatedTransaction.getStatus() == TransactionStatus.APPROVED) {
+                transactionMetricsRecorder.recordTransactionApproved();
+            } else if (updatedTransaction.getStatus() == TransactionStatus.FLAGGED) {
+                transactionMetricsRecorder.recordTransactionFlagged();
+            }
+
+            return transactionMapper.toResponse(updatedTransaction);
+
+        } finally {
+            Duration duration = Duration.between(start, Instant.now());
+            transactionMetricsRecorder.recordTransactionProcessingTime(duration);
         }
-
-        TransactionEntity updatedTransaction =
-                transactionRepository.save(savedEntity);
-
-        if(updatedTransaction.getStatus() == TransactionStatus.APPROVED) {
-            transactionMetricsRecorder.recordTransactionApproved();
-        } else if (updatedTransaction.getStatus() == TransactionStatus.FLAGGED) {
-            transactionMetricsRecorder.recordTransactionFlagged();
-        }
-
-        return transactionMapper.toResponse(updatedTransaction);
     }
 }

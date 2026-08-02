@@ -1,5 +1,7 @@
 package com.sentinelai.platform.observability.api;
 
+import java.time.Duration;
+
 public interface TransactionMetricsRecorder {
 
     void recordTransactionProcessed();
@@ -7,4 +9,6 @@ public interface TransactionMetricsRecorder {
     void recordTransactionApproved();
 
     void recordTransactionFlagged();
+
+    void recordTransactionProcessingTime(Duration duration);
 }
