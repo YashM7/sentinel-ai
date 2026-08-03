@@ -13,9 +13,11 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Duration;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(MockitoExtension.class)
 public class FraudDetectionServiceTest {
@@ -81,7 +83,10 @@ public class FraudDetectionServiceTest {
 
         Mockito.verify(rule1).evaluate(transaction);
         Mockito.verify(rule2).evaluate(transaction);
-        Mockito.verify(fraudMetricsRecorder, Mockito.times(1)).recordRuleTriggered("LargeAmountFraudRule");
+        Mockito.verify(fraudMetricsRecorder, Mockito.times(1))
+                .recordRuleTriggered("LargeAmountFraudRule");
+        Mockito.verify(fraudMetricsRecorder, Mockito.times(1))
+                .recordFraudDetectionDuration(any(Duration.class));
 
     }
 
@@ -130,8 +135,12 @@ public class FraudDetectionServiceTest {
 
         Mockito.verify(rule1).evaluate(transaction);
         Mockito.verify(rule2).evaluate(transaction);
-        Mockito.verify(fraudMetricsRecorder, Mockito.times(1)).recordRuleTriggered("LargeAmountFraudRule");
-        Mockito.verify(fraudMetricsRecorder, Mockito.times(1)).recordRuleTriggered("VelocityFraudRule");
+        Mockito.verify(fraudMetricsRecorder, Mockito.times(1))
+                .recordRuleTriggered("LargeAmountFraudRule");
+        Mockito.verify(fraudMetricsRecorder, Mockito.times(1))
+                .recordRuleTriggered("VelocityFraudRule");
+        Mockito.verify(fraudMetricsRecorder, Mockito.times(1))
+                .recordFraudDetectionDuration(any(Duration.class));
 
     }
 
@@ -172,6 +181,7 @@ public class FraudDetectionServiceTest {
 
         Mockito.verify(rule1).evaluate(transaction);
         Mockito.verify(rule2).evaluate(transaction);
-        Mockito.verifyNoInteractions(fraudMetricsRecorder);
+        Mockito.verify(fraudMetricsRecorder, Mockito.times(1))
+                .recordFraudDetectionDuration(any(Duration.class));
     }
 }

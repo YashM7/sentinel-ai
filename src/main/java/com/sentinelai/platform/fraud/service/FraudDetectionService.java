@@ -7,6 +7,8 @@ import com.sentinelai.platform.common.observability.api.FraudMetricsRecorder;
 import com.sentinelai.platform.transaction.entity.TransactionEntity;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,21 +25,30 @@ public class FraudDetectionService {
 
     public FraudCheckResponse evaluateTransaction(TransactionEntity transaction) {
 
-        List<FraudRuleResult> triggeredRules = new ArrayList<>();
+        Instant start = Instant.now();
 
-        for(FraudRule fraudRule : fraudRules) {
-            FraudRuleResult result =
-                    fraudRule.evaluate(transaction);
+        try {
 
-            if(result.isFraudulent()) {
-                triggeredRules.add(result);
-                fraudMetricsRecorder.recordRuleTriggered(result.getRuleName());
+            List<FraudRuleResult> triggeredRules = new ArrayList<>();
+
+            for(FraudRule fraudRule : fraudRules) {
+                FraudRuleResult result =
+                        fraudRule.evaluate(transaction);
+
+                if(result.isFraudulent()) {
+                    triggeredRules.add(result);
+                    fraudMetricsRecorder.recordRuleTriggered(result.getRuleName());
+                }
             }
-        }
 
-        return new FraudCheckResponse(
-                !triggeredRules.isEmpty(),
-                triggeredRules
-        );
+            return new FraudCheckResponse(
+                    !triggeredRules.isEmpty(),
+                    triggeredRules
+            );
+
+        } finally {
+            Duration duration = Duration.between(start, Instant.now());
+            fraudMetricsRecorder.recordFraudDetectionDuration(duration);
+        }
     }
 }
