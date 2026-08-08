@@ -2,8 +2,8 @@ spring:
   application:
     name: sentinel-ai
   datasource:
-    url: jdbc:postgresql://localhost:5432/sentinel_ai
-    username: postgres
+    url: jdbc:postgresql://localhost:5433/sentinel_ai
+    username: sentinel
     password: your_password
 
   jpa:

@@ -2,8 +2,20 @@ version: "3.8"
 
 services:
 
+  postgres:
+    image: postgres:16
+    container_name: sentinel-postgres
+    environment:
+      POSTGRES_DB: sentinel_ai
+      POSTGRES_USER: sentinel
+      POSTGRES_PASSWORD: your_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
   prometheus:
-    image: prom/prometheus
+    image: prom/prometheus:v3.13.2
     container_name: sentinel-prometheus
     ports:
       - "9090:9090"
@@ -11,7 +23,7 @@ services:
       - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
 
   grafana:
-    image: grafana/grafana
+    image: grafana/grafana:13.1.2
     container_name: sentinel-grafana
     ports:
       - "3000:3000"
@@ -22,4 +34,5 @@ services:
       - ./infrastructure/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
 
 volumes:
+  postgres-data:
   grafana-data:
